@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Menu,
@@ -39,33 +39,35 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && event.target && dropdownRef.current.contains) {
-        if (!dropdownRef.current.contains(event.target)) {
-          setIsDropdownOpen(false);
-        }
-      }
+  // FIXED: Close dropdown when clicking outside - proper contains() check
+  const handleClickOutside = useCallback((event) => {
+    if (
+      dropdownRef.current &&
+      event.target &&
+      !dropdownRef.current.contains(event.target)
+    ) {
+      setIsDropdownOpen(false);
     }
+  }, []);
 
+  useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [handleClickOutside]);
 
-  // Prevent body scroll when mobile menu is open
+  // FIXED: Body scroll management with class-based approach
   useEffect(() => {
     if (isMenuOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.classList.add("overflow-hidden");
     } else {
-      document.body.style.overflow = "unset";
+      document.body.classList.remove("overflow-hidden");
     }
 
     // Cleanup
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.classList.remove("overflow-hidden");
     };
   }, [isMenuOpen]);
 
@@ -143,6 +145,16 @@ export function Navbar() {
     { href: "/settings", icon: Settings, label: "Settings", key: "settings" },
   ].filter((item) => !(item.key === "dashboard" && item.href === "/profile"));
 
+  // FIXED: Image error handler with proper fallback management
+  const handleImageError = (e) => {
+    const img = e.target;
+    const fallback = img.parentElement?.querySelector(".fallback-avatar");
+    if (img && fallback) {
+      img.style.display = "none";
+      fallback.style.display = "flex";
+    }
+  };
+
   return (
     <>
       {/* Premium gradient background overlay */}
@@ -155,7 +167,7 @@ export function Navbar() {
             : "backdrop-blur-2xl border-b border-white/10 bg-black/20"
         }`}
       >
-        {/* Premium shimmer effect */}
+        {/* Premium shimmer effect - FIXED: Using CSS classes instead of inline styles */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-shimmer opacity-0 hover:opacity-100 transition-opacity duration-1000" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -182,14 +194,13 @@ export function Navbar() {
               </div>
             </Link>
 
-            {/* Enhanced Desktop Navigation */}
+            {/* Enhanced Desktop Navigation - FIXED: Removed inline animation styles */}
             <div className="hidden lg:flex items-center space-x-1">
               {navigationItems.map((item, index) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="relative px-4 py-2 text-white/80 hover:text-white transition-all duration-300 font-medium group overflow-hidden rounded-lg"
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  className={`relative px-4 py-2 text-white/80 hover:text-white transition-all duration-300 font-medium group overflow-hidden rounded-lg animate-fadeIn-${index}`}
                 >
                   <span className="relative z-10">{item.label}</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg" />
@@ -227,28 +238,27 @@ export function Navbar() {
                       className="flex items-center space-x-3 p-2 rounded-xl text-white hover:text-accent transition-all duration-300 group hover:bg-white/5"
                     >
                       <div className="relative">
-                        {getUserPhoto() ? (
-                          <Image
-                            src={getUserPhoto()}
-                            alt="Profile"
-                            width={100}
-                            height={100}
-                            className="w-10 h-10 rounded-full border-2 border-accent/50 group-hover:border-accent transition-all duration-300 object-cover group-hover:scale-110 shadow-lg"
-                            onError={(e) => {
-                              e.target.style.display = "none";
-                              e.target.nextElementSibling.style.display =
-                                "flex";
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className={`w-10 h-10 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 group-hover:border-accent transition-all duration-300 shadow-lg group-hover:scale-110 ${
-                            getUserPhoto() ? "hidden" : "flex"
-                          }`}
-                        >
-                          <span className="text-sm font-bold text-white">
-                            {getUserInitials(getUserDisplayName())}
-                          </span>
+                        {/* FIXED: Better image fallback structure */}
+                        <div className="w-10 h-10 relative">
+                          {getUserPhoto() && (
+                            <Image
+                              src={getUserPhoto()}
+                              alt="Profile"
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 rounded-full border-2 border-accent/50 group-hover:border-accent transition-all duration-300 object-cover group-hover:scale-110 shadow-lg"
+                              onError={handleImageError}
+                            />
+                          )}
+                          <div
+                            className={`fallback-avatar absolute inset-0 w-10 h-10 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 group-hover:border-accent transition-all duration-300 shadow-lg group-hover:scale-110 ${
+                              getUserPhoto() ? "hidden" : "flex"
+                            }`}
+                          >
+                            <span className="text-sm font-bold text-white">
+                              {getUserInitials(getUserDisplayName())}
+                            </span>
+                          </div>
                         </div>
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-black animate-pulse" />
                       </div>
@@ -267,26 +277,32 @@ export function Navbar() {
 
                     {/* Enhanced Dropdown Menu */}
                     {isDropdownOpen && (
-                      <div className="absolute right-0 mt-3 min-w-64 bg-black/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 py-2 z-52 animate-in slide-in-from-top-2 duration-200">
+                      <div className="absolute right-0 mt-3 min-w-64 bg-black/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/20 py-2 z-52 animate-slideInFromTop">
                         <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-2xl" />
 
                         <div className="relative px-4 py-4 border-b border-white/10">
                           <div className="flex items-center space-x-3">
-                            {getUserPhoto() ? (
-                              <Image
-                                src={getUserPhoto()}
-                                alt="Profile"
-                                width={100}
-                                height={100}
-                                className="w-12 h-12 rounded-full border-2 border-accent/50 object-cover shadow-lg"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 shadow-lg">
+                            <div className="w-12 h-12 relative">
+                              {getUserPhoto() && (
+                                <Image
+                                  src={getUserPhoto()}
+                                  alt="Profile"
+                                  width={48}
+                                  height={48}
+                                  className="w-12 h-12 rounded-full border-2 border-accent/50 object-cover shadow-lg"
+                                  onError={handleImageError}
+                                />
+                              )}
+                              <div
+                                className={`fallback-avatar absolute inset-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 shadow-lg ${
+                                  getUserPhoto() ? "hidden" : "flex"
+                                }`}
+                              >
                                 <span className="text-sm font-bold text-white">
                                   {getUserInitials(getUserDisplayName())}
                                 </span>
                               </div>
-                            )}
+                            </div>
                             <div>
                               <p className="text-sm text-white font-medium">
                                 {getUserDisplayName()}
@@ -356,25 +372,27 @@ export function Navbar() {
             <div className="lg:hidden flex items-center space-x-3">
               {isAuthenticated && (
                 <div className="relative">
-                  {getUserPhoto() ? (
-                    <Image
-                      src={getUserPhoto()}
-                      alt="Profile"
-                      width={100}
-                      height={100}
-                      className="w-9 h-9 rounded-full border-2 border-accent/50 object-cover shadow-md"
-                      onError={(e) => {
-                        e.target.style.display = "none";
-                        e.target.nextElementSibling.style.display = "flex";
-                      }}
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 shadow-md">
+                  <div className="w-9 h-9 relative">
+                    {getUserPhoto() && (
+                      <Image
+                        src={getUserPhoto()}
+                        alt="Profile"
+                        width={36}
+                        height={36}
+                        className="w-9 h-9 rounded-full border-2 border-accent/50 object-cover shadow-md"
+                        onError={handleImageError}
+                      />
+                    )}
+                    <div
+                      className={`fallback-avatar absolute inset-0 w-9 h-9 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 shadow-md ${
+                        getUserPhoto() ? "hidden" : "flex"
+                      }`}
+                    >
                       <span className="text-xs font-bold text-white">
                         {getUserInitials(getUserDisplayName())}
                       </span>
                     </div>
-                  )}
+                  </div>
                   {/* Status indicator (green dot) */}
                   <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border-2 border-black animate-pulse" />
                 </div>
@@ -398,21 +416,17 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Navigation Overlay */}
+      {/* Mobile Navigation Overlay - FIXED: Using CSS classes instead of inline styles */}
       {isMenuOpen && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-49 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-49 lg:hidden animate-fadeIn"
             onClick={() => setIsMenuOpen(false)}
-            style={{ animation: "fadeIn 0.3s ease-out" }}
           />
 
           {/* Right Side Panel */}
-          <div
-            className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-gradient-to-br from-black/95 via-gray-900/95 to-black/95 backdrop-blur-2xl border-l border-white/20 z-52 lg:hidden shadow-2xl flex flex-col"
-            style={{ animation: "slideInRight 0.3s ease-out" }}
-          >
+          <div className="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-gradient-to-br from-black/95 via-gray-900/95 to-black/95 backdrop-blur-2xl border-l border-white/20 z-52 lg:hidden shadow-2xl flex flex-col animate-slideInRight">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10 flex-shrink-0">
               <div className="flex items-center space-x-3">
@@ -440,21 +454,27 @@ export function Navbar() {
             {isAuthenticated && (
               <div className="p-6 border-b border-white/10 flex-shrink-0">
                 <div className="flex items-center space-x-4 mb-4">
-                  {getUserPhoto() ? (
-                    <Image
-                      src={getUserPhoto()}
-                      alt="Profile"
-                      width={150}
-                      height={150}
-                      className="w-14 h-14 rounded-full border-2 border-accent/50 object-cover shadow-lg"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 shadow-lg">
+                  <div className="w-14 h-14 relative">
+                    {getUserPhoto() && (
+                      <Image
+                        src={getUserPhoto()}
+                        alt="Profile"
+                        width={56}
+                        height={56}
+                        className="w-14 h-14 rounded-full border-2 border-accent/50 object-cover shadow-lg"
+                        onError={handleImageError}
+                      />
+                    )}
+                    <div
+                      className={`fallback-avatar absolute inset-0 w-14 h-14 rounded-full bg-gradient-to-br from-accent via-blue-500 to-purple-500 flex items-center justify-center border-2 border-accent/50 shadow-lg ${
+                        getUserPhoto() ? "hidden" : "flex"
+                      }`}
+                    >
                       <span className="text-lg font-bold text-white">
                         {getUserInitials(getUserDisplayName())}
                       </span>
                     </div>
-                  )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-semibold text-base truncate">
                       {getUserDisplayName()}
@@ -489,7 +509,7 @@ export function Navbar() {
               </div>
             )}
 
-            {/* Navigation Menu */}
+            {/* Navigation Menu - FIXED: Removed inline animation delay styles */}
             <div className="flex-1 overflow-y-auto py-4">
               <div className="px-4 space-y-2">
                 {/* Main Navigation */}
@@ -502,8 +522,7 @@ export function Navbar() {
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsMenuOpen(false)}
-                      className="flex items-center px-4 py-3 text-white/80 hover:text-white hover:bg-gradient-to-r hover:from-accent/10 hover:to-blue-500/10 transition-all duration-200 rounded-xl group"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      className={`flex items-center px-4 py-3 text-white/80 hover:text-white hover:bg-gradient-to-r hover:from-accent/10 hover:to-blue-500/10 transition-all duration-200 rounded-xl group animate-fadeIn-delay-${index}`}
                     >
                       <item.icon className="h-5 w-5 mr-4 group-hover:text-accent transition-colors duration-200" />
                       <span className="font-medium">{item.label}</span>
@@ -568,6 +587,10 @@ export function Navbar() {
       )}
 
       <style jsx>{`
+        .overflow-hidden {
+          overflow: hidden !important;
+        }
+
         @keyframes shimmer {
           0% {
             transform: translateX(-100%) skewX(-12deg);
@@ -588,6 +611,9 @@ export function Navbar() {
             opacity: 1;
           }
         }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
 
         @keyframes slideInRight {
           from {
@@ -597,13 +623,8 @@ export function Navbar() {
             transform: translateX(0);
           }
         }
-
-        .animate-in {
-          animation-fill-mode: both;
-        }
-
-        .slide-in-from-top-2 {
-          animation: slideInFromTop 0.2s ease-out;
+        .animate-slideInRight {
+          animation: slideInRight 0.3s ease-out;
         }
 
         @keyframes slideInFromTop {
@@ -615,6 +636,29 @@ export function Navbar() {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+        .animate-slideInFromTop {
+          animation: slideInFromTop 0.2s ease-out;
+        }
+
+        /* Animation delay classes */
+        .animate-fadeIn-0 {
+          animation: fadeIn 0.3s ease-out 0ms both;
+        }
+        .animate-fadeIn-1 {
+          animation: fadeIn 0.3s ease-out 100ms both;
+        }
+        .animate-fadeIn-2 {
+          animation: fadeIn 0.3s ease-out 200ms both;
+        }
+        .animate-fadeIn-delay-0 {
+          animation: fadeIn 0.3s ease-out 0ms both;
+        }
+        .animate-fadeIn-delay-1 {
+          animation: fadeIn 0.3s ease-out 50ms both;
+        }
+        .animate-fadeIn-delay-2 {
+          animation: fadeIn 0.3s ease-out 100ms both;
         }
       `}</style>
     </>

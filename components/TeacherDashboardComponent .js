@@ -1268,7 +1268,7 @@ const TeacherDashboard = () => {
 
             {/* Bottom Action Bar */}
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center md:gap-3">
                 <span className="text-sm text-gray-400">Quick Actions:</span>
                 {attendanceWindow && (
                   <button

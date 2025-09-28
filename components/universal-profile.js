@@ -512,14 +512,14 @@ export default function UniversalProfile() {
               <div
                 className={`absolute -top-2 -right-2 bg-gradient-to-r ${roleConfig.color} rounded-full p-2 border-2 border-black shadow-lg`}
               >
-                <roleConfig.icon className="h-5 w-5 text-white" />
+                <roleConfig.icon className="md:h-5 h-3 w-3 md:w-5 text-white" />
               </div>
 
               <button
                 onClick={handleImageUpload}
-                className="absolute bottom-0 right-0 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-full p-3 border-2 border-white/20 shadow-lg hover:scale-110 transition-all duration-300 group"
+                className="absolute -bottom-1 -right-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-full p-3 border-2 border-white/20 shadow-lg hover:scale-110 transition-all duration-300 group"
               >
-                <Camera className="h-4 w-4 text-white" />
+                <Camera className="md:h-4 h-3 w-3 md:w-4 text-white" />
               </button>
               <input
                 type="file"

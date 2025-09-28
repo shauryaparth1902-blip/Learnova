@@ -377,7 +377,7 @@ export default function ActivityPage() {
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                <h2 className="text-2xl md:text-4xl font-bold text-white mb-2">
                   Featured Activities
                 </h2>
                 <p className="text-gray-400">
@@ -385,8 +385,8 @@ export default function ActivityPage() {
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <TrendingUp className="w-5 h-5 text-accent" />
-                <span className="text-accent font-medium">Most Popular</span>
+                <TrendingUp className="w-5 h-5 text-accent-foreground" />
+                <span className="text-accent-foreground md:text-sm text-xs font-medium">Most Popular</span>
               </div>
             </div>
 
