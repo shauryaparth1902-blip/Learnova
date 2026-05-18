@@ -47,10 +47,7 @@ const LearnovaChatbot = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("general");
-
-  // Get API key from environment variable
-  const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY || "";
-  const hasApiKey = Boolean(apiKey);
+  const [isAiAvailable, setIsAiAvailable] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -280,43 +277,27 @@ const LearnovaChatbot = () => {
       return `🛟 **Support & Contact Information**\n\n📧 **Email:** ${contactInfo.email}\n📞 **Phone:** ${contactInfo.phone}\n🌐 **Website:** ${contactInfo.website}\n🎯 **Live Demo:** ${contactInfo.demo}\n\n**Support Options:**\n• 24/7 AI chatbot assistance\n• Live chat with technical team\n• Video call support sessions\n• Comprehensive documentation\n• Community forums\n• Training workshops\n\n**Response Times:**\n• General inquiries: Within 4 hours\n• Technical issues: Within 2 hours\n• Urgent/Critical: Within 30 minutes\n\nHow can I connect you with the right support channel?`;
     }
 
-    // API integration check - only if API key is available
-    if (hasApiKey) {
-      try {
-        const response = await fetch(
-          "https://api.groq.com/openai/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "llama-3.1-8b-instant",
-              messages: [
-                {
-                  role: "system",
-                  content: `You are Nova, the friendly AI assistant for Learnova - a Smart Student Engagement Ecosystem. You help with questions about attendance automation, smart activities, security features, analytics, and educational technology. Always be helpful, informative, and encouraging. Keep responses concise but comprehensive.`,
-                },
-                { role: "user", content: userMessage },
-              ],
-              max_tokens: 400,
-              temperature: 0.7,
-            }),
-          }
-        );
+    // API integration check via server-side proxy
+    try {
+      const response = await fetch("/api/groq", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: userMessage }),
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          return (
-            data.choices[0]?.message?.content ||
-            "I'm here to help with Learnova!"
-          );
+      if (response.ok) {
+        const data = await response.json();
+        const aiMessage = data?.data?.message;
+        if (aiMessage) {
+          setIsAiAvailable(true);
+          return aiMessage;
         }
-      } catch (err) {
-        console.error("Groq API error:", err);
-        // Fall through to built-in responses
       }
+    } catch (err) {
+      console.error("Groq API error:", err);
+      // Fall through to built-in responses
     }
 
     // Enhanced fallback responses
@@ -552,7 +533,7 @@ const LearnovaChatbot = () => {
             <h3 className="font-bold text-lg">Nova AI</h3>
             <p className="text-xs opacity-90 flex items-center gap-1">
               <Sparkles size={10} />
-              Learnova Assistant {hasApiKey && "⚡"}
+              Learnova Assistant {isAiAvailable && "⚡"}
             </p>
           </div>
         </div>
@@ -786,7 +767,7 @@ const LearnovaChatbot = () => {
             </div>
             <div className="flex justify-between items-center mt-3">
               <div className="flex items-center space-x-2">
-                {hasApiKey && (
+                {isAiAvailable && (
                   <div className="flex items-center space-x-1 text-xs">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <span
